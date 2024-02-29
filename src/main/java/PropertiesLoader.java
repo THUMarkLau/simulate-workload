@@ -67,6 +67,7 @@ public class PropertiesLoader {
       }
       logger.info("Total measurements: {}", measurementTotalCount);
     }
+    SchemaRegisterTask.totalCount.set(devices.size());
     devices.sort(Comparator.comparingLong(Device::getInterval));
     Map<Long, List<Device>> intervalDeviceMap = new HashMap<>();
     long currentInterval = 0;

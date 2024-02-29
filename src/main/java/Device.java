@@ -17,7 +17,11 @@
  * under the License.
  */
 
+import org.apache.iotdb.rpc.IoTDBConnectionException;
+import org.apache.iotdb.rpc.StatementExecutionException;
+import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,5 +89,18 @@ public class Device {
       sqls.add(String.format(pattern, deviceId, measurementIds.get(i), types.get(i)));
     }
     return sqls;
+  }
+
+  public void createSchema() throws IoTDBConnectionException, StatementExecutionException {
+    List<TSEncoding> encodings = new ArrayList<>(measurementIds.size());
+    List<CompressionType> compressionTypes = new ArrayList<>(measurementIds.size());
+    List<String> fullPaths = new ArrayList<>(measurementIds.size());
+    for (int i = 0; i < measurementIds.size(); ++i) {
+      encodings.add(TSEncoding.PLAIN);
+      compressionTypes.add(CompressionType.SNAPPY);
+      fullPaths.add(deviceId + "." + measurementIds.get(i));
+    }
+    GlobalSessionPool.getInstance()
+        .createMultiTimeseries(fullPaths, types, encodings, compressionTypes);
   }
 }

@@ -25,6 +25,19 @@ public class Monitor implements Runnable {
 
   @Override
   public void run() {
+    while (SchemaRegisterTask.finishedCount.get() < SchemaRegisterTask.totalCount.get()) {
+      logger.info(
+          "Registering schema: {}/{}",
+          SchemaRegisterTask.finishedCount.get(),
+          SchemaRegisterTask.totalCount.get());
+      try {
+        Thread.sleep(10_000);
+      } catch (Exception e) {
+        logger.error("Meets error", e);
+        return;
+      }
+    }
+
     long time = System.currentTimeMillis();
     while (true) {
       try {
@@ -37,8 +50,8 @@ public class Monitor implements Runnable {
           DataQueue.getInstance().size(),
           (long)
               (((double) DataConsumer.pointsCounter.getAndSet(0))
-                  / (System.currentTimeMillis() - time)
-                  * 1000));
+                  * 1000L
+                  / (System.currentTimeMillis() - time)));
     }
   }
 }

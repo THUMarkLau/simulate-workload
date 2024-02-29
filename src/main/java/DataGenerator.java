@@ -35,15 +35,12 @@ public class DataGenerator implements Runnable {
   @Override
   public void run() {
     for (Device device : devices) {
-      List<String> sqls = device.getSchemaSql();
-      for (String sql : sqls) {
-        try {
-          GlobalSessionPool.getInstance().executeNonQueryStatement(sql);
-        } catch (Exception e) {
-          logger.error("Failed to create schema for device {}", device.getDeviceId(), e);
-          Configuration.failed.set(true);
-          return;
-        }
+      try {
+        device.createSchema();
+      } catch (Exception e) {
+        logger.error("Failed to create schema for device {}", device.getDeviceId(), e);
+        //        Configuration.failed.set(true);
+        return;
       }
     }
     while (true) {

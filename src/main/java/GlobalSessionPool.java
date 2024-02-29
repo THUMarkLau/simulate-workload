@@ -20,7 +20,9 @@
 import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
 import org.apache.iotdb.session.pool.SessionPool;
+import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +42,13 @@ public class GlobalSessionPool {
   }
 
   public void init() {
+    logger.info("Session pool size: {}", Configuration.clientCount);
     sessionPool =
         new SessionPool(Configuration.dbIp, 6667, "root", "root", Configuration.clientCount);
   }
 
   public void executeNonQueryStatement(String sql)
       throws IoTDBConnectionException, StatementExecutionException {
-    logger.info("Executing {}", sql);
     sessionPool.executeNonQueryStatement(sql);
   }
 
@@ -58,5 +60,22 @@ public class GlobalSessionPool {
       List<List<Object>> values)
       throws IoTDBConnectionException, StatementExecutionException {
     sessionPool.insertRecords(deviceIds, timestamps, measurements, types, values);
+  }
+
+  public void createMultiTimeseries(
+      List<String> paths,
+      List<TSDataType> dataTypes,
+      List<TSEncoding> encodings,
+      List<CompressionType> compressionTypes)
+      throws IoTDBConnectionException, StatementExecutionException {
+    if (paths.size() != dataTypes.size()
+        || dataTypes.size() != encodings.size()
+        || encodings.size() != compressionTypes.size()) {
+      logger.error(
+          "The size of paths, dataTypes, encodings and compressionTypes should be the same");
+      throw new RuntimeException("failed to register schema");
+    }
+    sessionPool.createMultiTimeseries(
+        paths, dataTypes, encodings, compressionTypes, null, null, null, null);
   }
 }

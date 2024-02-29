@@ -24,32 +24,45 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
+  private static ExecutorService generationService;
+  private static ExecutorService consumerService;
+  private static Map<Long, List<Device>> intervalDeviceMap;
 
   public static void main(String[] args) throws Exception {
+    loadConfig(args);
+    initConsumerService();
+    initSessionPool();
+    startMonitor();
+    registerSchema(intervalDeviceMap.values());
+    startGenerating();
+    waitEnding();
+  }
+
+  private static void loadConfig(String[] args) throws IOException {
     Configuration.parseConfig(args);
     PropertiesLoader propertiesLoader = new PropertiesLoader(new File(Configuration.configFile));
-    Map<Long, List<Device>> intervalDeviceMap = propertiesLoader.load();
+    intervalDeviceMap = propertiesLoader.load();
+  }
 
+  private static void initConsumerService() {
     // start threads for consuming
-    ExecutorService consumerService = Executors.newFixedThreadPool(Configuration.clientCount);
+    consumerService = Executors.newFixedThreadPool(Configuration.clientCount);
     for (int i = 0; i < Configuration.clientCount; i++) {
       consumerService.submit(new DataConsumer());
     }
+  }
 
-    // compute generating thread
-    int generatingThreadCount = 0;
-    for (List<Device> devices : intervalDeviceMap.values()) {
-      generatingThreadCount += devices.size() / 2000 + ((devices.size() % 2000) > 0 ? 1 : 0);
-    }
-    Configuration.clientCount = Math.min(generatingThreadCount, Configuration.clientCount);
-
+  private static void initSessionPool() {
     GlobalSessionPool.getInstance().init();
     if (Configuration.clearBeforeStart) {
       try {
@@ -58,9 +71,41 @@ public class Main {
         // ignore
       }
     }
+  }
 
+  private static void startMonitor() {
+    if (Configuration.enableMonitor) {
+      Thread monitorThread = new Thread(new Monitor());
+      monitorThread.setName("MonitorThread");
+      monitorThread.start();
+    }
+  }
+
+  private static void registerSchema(Collection<List<Device>> devicesSet)
+      throws InterruptedException {
+    ExecutorService registerSchemaService = Executors.newFixedThreadPool(Configuration.clientCount);
+    for (List<Device> devices : devicesSet) {
+      for (Device device : devices) {
+        registerSchemaService.submit(new SchemaRegisterTask(device));
+      }
+    }
+
+    while (SchemaRegisterTask.finishedCount.get() < SchemaRegisterTask.totalCount.get()) {
+      Thread.sleep(10000);
+    }
+    registerSchemaService.shutdownNow();
+    registerSchemaService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+    logger.info("Register schema end");
+  }
+
+  private static void startGenerating() {
+    // compute generating thread
+    int generatingThreadCount = 0;
+    for (List<Device> devices : intervalDeviceMap.values()) {
+      generatingThreadCount += devices.size() / 2000 + ((devices.size() % 2000) > 0 ? 1 : 0);
+    }
     logger.info("Using {} threads to generate workload", generatingThreadCount);
-    ExecutorService generationService = Executors.newFixedThreadPool(generatingThreadCount);
+    generationService = Executors.newFixedThreadPool(generatingThreadCount);
     double idealPtsPerSec = 0;
     for (Map.Entry<Long, List<Device>> entry : intervalDeviceMap.entrySet()) {
       long interval = entry.getKey();
@@ -74,14 +119,9 @@ public class Main {
     logger.info("Ideal points per second: {}", idealPtsPerSec);
     // help for gc
     intervalDeviceMap = null;
+  }
 
-    Thread monitorThread = null;
-    if (Configuration.enableMonitor) {
-      monitorThread = new Thread(new Monitor());
-      monitorThread.setName("MonitorThread");
-      monitorThread.start();
-    }
-
+  private static void waitEnding() throws InterruptedException {
     while (true) {
       if (Configuration.shouldEnd()) {
         consumerService.shutdownNow();
