@@ -34,15 +34,6 @@ public class DataGenerator implements Runnable {
 
   @Override
   public void run() {
-    for (Device device : devices) {
-      try {
-        device.createSchema();
-      } catch (Exception e) {
-        logger.error("Failed to create schema for device {}", device.getDeviceId(), e);
-        //        Configuration.failed.set(true);
-        return;
-      }
-    }
     while (true) {
       long currentTime = System.currentTimeMillis();
       DataQueue queue = DataQueue.getInstance();

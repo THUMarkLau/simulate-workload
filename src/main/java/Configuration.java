@@ -34,6 +34,7 @@ public class Configuration {
   public static boolean enableMonitor = false;
 
   public static void parseConfig(String[] args) {
+    queueSize = Math.max(SchemaRegisterTask.totalCount.get() * 2, queueSize);
     for (int i = 0; i < args.length; ++i) {
       if (args[i].equals("--config")) {
         configFile = args[++i];

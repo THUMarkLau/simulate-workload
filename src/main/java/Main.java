@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -56,7 +58,19 @@ public class Main {
 
   private static void initConsumerService() {
     // start threads for consuming
-    consumerService = Executors.newFixedThreadPool(Configuration.clientCount);
+    consumerService =
+        Executors.newFixedThreadPool(
+            Configuration.clientCount,
+            new ThreadFactory() {
+              private final AtomicInteger counter = new AtomicInteger(0);
+
+              @Override
+              public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("DataConsumer-" + counter.incrementAndGet());
+                return thread;
+              }
+            });
     for (int i = 0; i < Configuration.clientCount; i++) {
       consumerService.submit(new DataConsumer());
     }
@@ -105,7 +119,19 @@ public class Main {
       generatingThreadCount += devices.size() / 2000 + ((devices.size() % 2000) > 0 ? 1 : 0);
     }
     logger.info("Using {} threads to generate workload", generatingThreadCount);
-    generationService = Executors.newFixedThreadPool(generatingThreadCount);
+    generationService =
+        Executors.newFixedThreadPool(
+            generatingThreadCount,
+            new ThreadFactory() {
+              private final AtomicInteger counter = new AtomicInteger(0);
+
+              @Override
+              public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("DataGeneration-" + counter.incrementAndGet());
+                return thread;
+              }
+            });
     double idealPtsPerSec = 0;
     for (Map.Entry<Long, List<Device>> entry : intervalDeviceMap.entrySet()) {
       long interval = entry.getKey();
