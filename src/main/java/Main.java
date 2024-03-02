@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Main {
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -146,9 +147,11 @@ public class Main {
         int end = Math.min(i + 2000, devices.size());
         generationService.submit(new DataGenerator(interval, devices.subList(i, end)));
       }
-      idealPtsPerSec += devices.size() * 1000.0 / interval;
+      AtomicLong measurementsCount = new AtomicLong(0);
+      devices.forEach(x -> measurementsCount.addAndGet(x.getMeasurementCount()));
+      idealPtsPerSec += measurementsCount.doubleValue() * 1000.0 / interval;
     }
-    logger.info("Ideal points per second: {}", idealPtsPerSec);
+    logger.info("Ideal points per second: {}", (long) idealPtsPerSec);
     // help for gc
     intervalDeviceMap = null;
   }
