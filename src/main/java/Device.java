@@ -95,10 +95,10 @@ public class Device {
     List<TSEncoding> encodings = new ArrayList<>(measurementIds.size());
     List<CompressionType> compressionTypes = new ArrayList<>(measurementIds.size());
     List<String> fullPaths = new ArrayList<>(measurementIds.size());
-    for (int i = 0; i < measurementIds.size(); ++i) {
+    for (String measurementId : measurementIds) {
       encodings.add(TSEncoding.PLAIN);
       compressionTypes.add(CompressionType.SNAPPY);
-      fullPaths.add(deviceId + "." + measurementIds.get(i));
+      fullPaths.add(deviceId + "." + measurementId);
     }
     GlobalSessionPool.getInstance()
         .createMultiTimeseries(fullPaths, types, encodings, compressionTypes);

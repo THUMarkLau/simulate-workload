@@ -8,31 +8,25 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}</directory>
+            <directory>${project.build.directory}</directory> <!-- 指定包含文件的目录 -->
             <includes>
-                <include>*-jar-with-dependencies.jar</include> <!-- 包含jar-with-dependencies -->
+                <include>*-jar-with-dependencies.jar</include> <!-- 指定包含的文件 -->
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/resources</directory>
-            <outputDirectory>/</outputDirectory>
-            <includes>
-                <include>logback.xml</include> <!-- 包含特定脚本 -->
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/resources</directory>
-            <outputDirectory>/</outputDirectory>
-            <includes>
-                <include>run.sh</include> <!-- 包含特定脚本 -->
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/src/main/resources</directory>
-            <outputDirectory>/</outputDirectory>
-            <includes>
-                <include>config.txt</include> <!-- 包含特定脚本 -->
-            </includes>
+            <outputDirectory>/</outputDirectory> <!-- 指定输出目录，这里是压缩包的根目录 -->
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>${project.basedir}/src/main/resources/config.txt</source>
+            <outputDirectory>/conf</outputDirectory>
+        </file>
+        <file>
+            <source>${project.basedir}/src/main/resources/run.sh</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <file>
+            <source>${project.basedir}/src/main/resources/logback.xml</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+    </files>
 </assembly>

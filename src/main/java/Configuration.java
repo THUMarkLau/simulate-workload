@@ -30,11 +30,12 @@ public class Configuration {
   private static long startTime = System.currentTimeMillis();
   public static AtomicBoolean failed = new AtomicBoolean(false);
   public static String storageGroupName = "root.sg";
+  public static boolean registerSchema = false;
+  public static boolean registerSchemaOnly = false;
   public static boolean clearBeforeStart = false;
   public static boolean enableMonitor = false;
 
   public static void parseConfig(String[] args) {
-    queueSize = Math.max(SchemaRegisterTask.totalCount.get() * 2, queueSize);
     for (int i = 0; i < args.length; ++i) {
       if (args[i].equals("--config")) {
         configFile = args[++i];
@@ -56,6 +57,10 @@ public class Configuration {
         clearBeforeStart = true;
       } else if (args[i].equals("--monitor")) {
         enableMonitor = true;
+      } else if (args[i].equals("--register-schema")) {
+        registerSchema = true;
+      } else if (args[i].equals("--register-schema-only")) {
+        registerSchemaOnly = true;
       }
     }
   }

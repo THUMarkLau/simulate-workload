@@ -45,15 +45,21 @@ public class Main {
     initConsumerService();
     initSessionPool();
     startMonitor();
-    registerSchema(intervalDeviceMap.values());
-    startGenerating();
-    waitEnding();
+    if (Configuration.registerSchema) {
+      registerSchema(intervalDeviceMap.values());
+    }
+    if (!Configuration.registerSchemaOnly) {
+      startGenerating();
+      waitEnding();
+    }
   }
 
   private static void loadConfig(String[] args) throws IOException {
     Configuration.parseConfig(args);
     PropertiesLoader propertiesLoader = new PropertiesLoader(new File(Configuration.configFile));
     intervalDeviceMap = propertiesLoader.load();
+    Configuration.queueSize =
+        Math.max(SchemaRegisterTask.totalCount.get() * 16, Configuration.queueSize);
   }
 
   private static void initConsumerService() {

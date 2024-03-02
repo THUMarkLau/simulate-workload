@@ -25,7 +25,8 @@ public class Monitor implements Runnable {
 
   @Override
   public void run() {
-    while (SchemaRegisterTask.finishedCount.get() < SchemaRegisterTask.totalCount.get()) {
+    while (SchemaRegisterTask.finishedCount.get() < SchemaRegisterTask.totalCount.get()
+        && Configuration.registerSchema) {
       logger.info(
           "Registering schema: {}/{}",
           SchemaRegisterTask.finishedCount.get(),
@@ -38,8 +39,8 @@ public class Monitor implements Runnable {
       }
     }
 
-    long time = System.currentTimeMillis();
     while (true) {
+      long time = System.currentTimeMillis();
       try {
         Thread.sleep(10_000);
       } catch (InterruptedException e) {
