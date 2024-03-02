@@ -103,4 +103,8 @@ public class Device {
     GlobalSessionPool.getInstance()
         .createMultiTimeseries(fullPaths, types, encodings, compressionTypes);
   }
+
+  public int getMeasurementCount() {
+    return measurementIds.size();
+  }
 }
