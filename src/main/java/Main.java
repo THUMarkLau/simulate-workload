@@ -84,13 +84,17 @@ public class Main {
   }
 
   private static void initSessionPool() {
-    GlobalSessionPool.getInstance().init();
-    if (Configuration.clearBeforeStart) {
-      try {
-        GlobalSessionPool.getInstance().executeNonQueryStatement("delete database root.**");
-      } catch (IoTDBConnectionException | StatementExecutionException e) {
-        // ignore
+    if (Configuration.mode.equalsIgnoreCase("iotdb")) {
+      GlobalSessionPool.getInstance().init();
+      if (Configuration.clearBeforeStart) {
+        try {
+          GlobalSessionPool.getInstance().executeNonQueryStatement("delete database root.**");
+        } catch (IoTDBConnectionException | StatementExecutionException e) {
+          // ignore
+        }
       }
+    } else if (Configuration.mode.equalsIgnoreCase("tdengine")) {
+      TDEngineSessionPool.init();
     }
   }
 
@@ -149,7 +153,7 @@ public class Main {
       }
       AtomicLong measurementsCount = new AtomicLong(0);
       devices.forEach(x -> measurementsCount.addAndGet(x.getMeasurementCount()));
-      idealPtsPerSec += measurementsCount.doubleValue() * 1000.0 / interval;
+      idealPtsPerSec += measurementsCount.doubleValue() * entry.getValue().get(0).getFreq();
     }
     logger.info("Ideal points per second: {}", (long) idealPtsPerSec);
     // help for gc

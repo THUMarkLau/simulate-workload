@@ -23,21 +23,31 @@ import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Device {
+  private static Logger logger = LoggerFactory.getLogger(Device.class);
   public static final AtomicLong ID_COUNTER = new AtomicLong(0);
   private final String deviceId;
   private final List<String> measurementIds;
   private final List<TSDataType> types;
   private final boolean aligned;
   private final long interval;
+  private final double freq;
 
-  public Device(int measurementCount, TSDataType[] dataTypes, boolean aligned, long interval) {
-    this.deviceId = Configuration.storageGroupName + ".d" + ID_COUNTER.getAndIncrement();
+  public Device(
+      int measurementCount, TSDataType[] dataTypes, boolean aligned, long interval, double freq) {
+    if (Configuration.mode.equalsIgnoreCase("iotdb")) {
+      this.deviceId = Configuration.storageGroupName + ".d" + ID_COUNTER.getAndIncrement();
+    } else {
+      this.deviceId = "d" + ID_COUNTER.getAndIncrement();
+    }
     this.aligned = aligned;
     this.interval = interval;
     this.measurementIds = new ArrayList<>(measurementCount);
@@ -45,6 +55,7 @@ public class Device {
       this.measurementIds.add("s" + i);
     }
     this.types = Arrays.asList(dataTypes);
+    this.freq = freq;
   }
 
   public long getInterval() {
@@ -92,19 +103,59 @@ public class Device {
   }
 
   public void createSchema() throws IoTDBConnectionException, StatementExecutionException {
-    List<TSEncoding> encodings = new ArrayList<>(measurementIds.size());
-    List<CompressionType> compressionTypes = new ArrayList<>(measurementIds.size());
-    List<String> fullPaths = new ArrayList<>(measurementIds.size());
-    for (String measurementId : measurementIds) {
-      encodings.add(TSEncoding.PLAIN);
-      compressionTypes.add(CompressionType.SNAPPY);
-      fullPaths.add(deviceId + "." + measurementId);
+    if (Configuration.mode.equalsIgnoreCase("iotdb")) {
+      List<TSEncoding> encodings = new ArrayList<>(measurementIds.size());
+      List<CompressionType> compressionTypes = new ArrayList<>(measurementIds.size());
+      List<String> fullPaths = new ArrayList<>(measurementIds.size());
+      for (String measurementId : measurementIds) {
+        encodings.add(TSEncoding.PLAIN);
+        compressionTypes.add(CompressionType.SNAPPY);
+        fullPaths.add(deviceId + "." + measurementId);
+      }
+      GlobalSessionPool.getInstance()
+          .createMultiTimeseries(fullPaths, types, encodings, compressionTypes);
+    } else {
+      TDEngineSessionPool.createSchema(this);
     }
-    GlobalSessionPool.getInstance()
-        .createMultiTimeseries(fullPaths, types, encodings, compressionTypes);
   }
 
   public int getMeasurementCount() {
     return measurementIds.size();
+  }
+
+  public double getFreq() {
+    return freq;
+  }
+
+  public String toTDengineSQL() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("CREATE TABLE ").append(deviceId).append(" (ts timestamp,");
+    for (int i = 0; i < measurementIds.size(); ++i) {
+      String id = measurementIds.get(i);
+      TSDataType type = types.get(i);
+      builder.append(id).append(' ');
+      switch (type) {
+        case INT32:
+        case INT64:
+          builder.append("BIGINT");
+          break;
+        case FLOAT:
+          builder.append("FLOAT");
+          break;
+        case DOUBLE:
+          builder.append("DOUBLE");
+          break;
+        case BOOLEAN:
+          builder.append("BOOL");
+          break;
+        case TEXT:
+          builder.append("BINARY(1024)");
+          break;
+      }
+      if (i != measurementIds.size() - 1) {
+        builder.append(", ");
+      }
+    }
+    return builder.append(");").toString();
   }
 }

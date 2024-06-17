@@ -43,4 +43,16 @@ public class Record {
     this.values = values;
     this.aligned = aligned;
   }
+
+  public String toTDengineSQL() {
+    StringBuilder builder = new StringBuilder();
+    builder.append(deviceId).append(" VALUES (").append(timestamp).append(',');
+    for (Object value : values) {
+      builder.append(value.toString());
+      builder.append(',');
+    }
+    builder.deleteCharAt(builder.length() - 1);
+    builder.append(") ");
+    return builder.toString();
+  }
 }

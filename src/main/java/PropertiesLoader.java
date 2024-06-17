@@ -63,7 +63,7 @@ public class PropertiesLoader {
           byte type = Byte.parseByte(properties[j + 3]);
           types[j] = TSDataType.deserialize(type);
         }
-        devices.add(new Device(measurementCount, types, aligned, (long) (1000 / freq)));
+        devices.add(new Device(measurementCount, types, aligned, (long) (1000 / freq), freq));
       }
       logger.info("Total measurements: {}", measurementTotalCount);
     }

@@ -34,6 +34,7 @@ public class Configuration {
   public static boolean registerSchemaOnly = false;
   public static boolean clearBeforeStart = false;
   public static boolean enableMonitor = false;
+  public static String mode = "iotdb";
 
   public static void parseConfig(String[] args) {
     for (int i = 0; i < args.length; ++i) {
@@ -61,6 +62,8 @@ public class Configuration {
         registerSchema = true;
       } else if (args[i].equals("--register-schema-only")) {
         registerSchemaOnly = true;
+      } else if (args[i].equals("--mode")) {
+        mode = args[++i];
       }
     }
   }

@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DataConsumer implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(DataConsumer.class);
   public static final AtomicLong pointsCounter = new AtomicLong(0);
+  public static final AtomicLong totalCount = new AtomicLong(0);
   private int requestSize = Configuration.requestSize;
   private List<Record> records;
 
@@ -73,22 +74,26 @@ public class DataConsumer implements Runnable {
     if (records.isEmpty()) {
       return;
     }
-    List<String> deviceIds = new ArrayList<>(records.size());
-    List<Long> timestamps = new ArrayList<>(records.size());
-    List<List<String>> measurementIds = new ArrayList<>(records.size());
-    List<List<TSDataType>> types = new ArrayList<>(records.size());
-    List<List<Object>> values = new ArrayList<>(records.size());
+    if (Configuration.mode.equalsIgnoreCase("iotdb")) {
+      List<String> deviceIds = new ArrayList<>(records.size());
+      List<Long> timestamps = new ArrayList<>(records.size());
+      List<List<String>> measurementIds = new ArrayList<>(records.size());
+      List<List<TSDataType>> types = new ArrayList<>(records.size());
+      List<List<Object>> values = new ArrayList<>(records.size());
 
-    for (Record record : records) {
-      deviceIds.add(record.deviceId);
-      timestamps.add(record.timestamp);
-      measurementIds.add(record.measurements);
-      pointsCounter.addAndGet(record.measurements.size());
-      types.add(record.types);
-      values.add(record.values);
+      for (Record record : records) {
+        deviceIds.add(record.deviceId);
+        timestamps.add(record.timestamp);
+        measurementIds.add(record.measurements);
+        pointsCounter.addAndGet(record.measurements.size());
+        types.add(record.types);
+        values.add(record.values);
+      }
+
+      GlobalSessionPool.getInstance()
+          .insertRecords(deviceIds, timestamps, measurementIds, types, values);
+    } else {
+      TDEngineSessionPool.sendRequest(records);
     }
-
-    GlobalSessionPool.getInstance()
-        .insertRecords(deviceIds, timestamps, measurementIds, types, values);
   }
 }

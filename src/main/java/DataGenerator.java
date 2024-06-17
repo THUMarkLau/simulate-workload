@@ -26,6 +26,7 @@ public class DataGenerator implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(DataGenerator.class);
   private final long interval;
   private final List<Device> devices;
+  private long lastLogTime = 0L;
 
   public DataGenerator(long interval, List<Device> devices) {
     this.interval = interval;
@@ -39,8 +40,10 @@ public class DataGenerator implements Runnable {
       DataQueue queue = DataQueue.getInstance();
       for (Device device : devices) {
         // generate data
-        if (!queue.submit(device.generateData())) {
+        if (!queue.submit(device.generateData())
+            && System.currentTimeMillis() - lastLogTime > 10_000) {
           logger.error("Failed to submit data for device {}", device.getDeviceId());
+          lastLogTime = System.currentTimeMillis();
         }
       }
       long sleepTime = interval - (System.currentTimeMillis() - currentTime);
@@ -50,8 +53,6 @@ public class DataGenerator implements Runnable {
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
-      } else {
-        System.out.println("Data generation is too slow");
       }
     }
   }

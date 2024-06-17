@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class Monitor implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(Monitor.class);
+  private long startTime = 0;
 
   @Override
   public void run() {
@@ -39,20 +40,24 @@ public class Monitor implements Runnable {
       }
     }
 
+    startTime = System.currentTimeMillis();
     while (true) {
       long time = System.currentTimeMillis();
       try {
         Thread.sleep(10_000);
       } catch (InterruptedException e) {
         // ignore
+        return;
       }
+      long count = DataConsumer.pointsCounter.getAndSet(0);
+      DataConsumer.totalCount.addAndGet(count);
       logger.info(
           "Current queue size is {}, average write speed is {} pts/seconds",
           DataQueue.getInstance().size(),
-          (long)
-              (((double) DataConsumer.pointsCounter.getAndSet(0))
-                  * 1000L
-                  / (System.currentTimeMillis() - time)));
+          (long) (((double) count * 1000L / (System.currentTimeMillis() - time))));
+      logger.info(
+          "Global avg write speed is {}",
+          (DataConsumer.totalCount.get() * 1000L / (System.currentTimeMillis() - startTime)));
     }
   }
 }
