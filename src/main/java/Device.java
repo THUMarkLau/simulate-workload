@@ -158,4 +158,8 @@ public class Device {
     }
     return builder.append(");").toString();
   }
+
+  public int getMeasurementCount() {
+    return measurementIds.size();
+  }
 }
