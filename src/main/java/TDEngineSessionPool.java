@@ -72,12 +72,12 @@ public class TDEngineSessionPool {
     return connectionThreadLocal.get();
   }
 
-  public static void sendRequest(List<Record> records) {
+  public static void sendRequest(List<Object> records) {
     StringBuilder sql = new StringBuilder();
     sql.append("INSERT INTO ");
-    for (Record record : records) {
-      sql.append(record.toTDengineSQL());
-      DataConsumer.pointsCounter.addAndGet(record.measurements.size());
+    for (Object record : records) {
+      sql.append(((Record) record).toTDengineSQL());
+      DataConsumer.pointsCounter.addAndGet(((Record) record).measurements.size());
     }
     Connection conn = getConn();
     try (Statement stmt = conn.createStatement()) {

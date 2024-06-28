@@ -23,11 +23,13 @@ import org.apache.iotdb.session.pool.SessionPool;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
+import org.apache.iotdb.tsfile.write.record.Tablet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class GlobalSessionPool {
   Logger logger = LoggerFactory.getLogger(GlobalSessionPool.class);
@@ -60,6 +62,11 @@ public class GlobalSessionPool {
       List<List<Object>> values)
       throws IoTDBConnectionException, StatementExecutionException {
     sessionPool.insertRecords(deviceIds, timestamps, measurements, types, values);
+  }
+
+  public void insertAlignedTablets(Map<String, Tablet> tablets)
+      throws IoTDBConnectionException, StatementExecutionException {
+    sessionPool.insertAlignedTablets(tablets);
   }
 
   public void createMultiTimeseries(

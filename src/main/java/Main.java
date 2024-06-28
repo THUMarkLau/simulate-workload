@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +38,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Main {
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
-  private static ExecutorService generationService;
+  private static ExecutorService writeService;
   private static ExecutorService consumerService;
   private static Map<Long, List<Device>> intervalDeviceMap;
+  private static List<Path> csvDirectories;
 
   public static void main(String[] args) throws Exception {
     loadConfig(args);
@@ -50,13 +52,27 @@ public class Main {
       registerSchema(intervalDeviceMap.values());
     }
     if (!Configuration.registerSchemaOnly) {
-      startGenerating();
+      startWriting();
       waitEnding();
     }
   }
 
   private static void loadConfig(String[] args) throws IOException {
     Configuration.parseConfig(args);
+    if (!Configuration.loadCSV) {
+      loadTimeSeriesConfig();
+    } else {
+      loadCSVConfig();
+    }
+  }
+
+  private static void loadCSVConfig() throws IOException {
+    PropertiesLoader propertiesLoader = new PropertiesLoader(new File(Configuration.csvConfigFile));
+    csvDirectories = propertiesLoader.loadCSV();
+    Configuration.queueSize = Math.max(csvDirectories.size() * 16, Configuration.queueSize);
+  }
+
+  private static void loadTimeSeriesConfig() throws IOException {
     PropertiesLoader propertiesLoader = new PropertiesLoader(new File(Configuration.configFile));
     intervalDeviceMap = propertiesLoader.load();
     Configuration.queueSize =
@@ -123,6 +139,35 @@ public class Main {
     logger.info("Register schema end");
   }
 
+  private static void startWriting() {
+    if (Configuration.loadCSV) {
+      startLoadingCSV();
+    } else {
+      startGenerating();
+    }
+  }
+
+  private static void startLoadingCSV() {
+    int loadingThreadCount = csvDirectories.size();
+    logger.info("Using {} threads to load CSV", loadingThreadCount);
+    writeService =
+        Executors.newFixedThreadPool(
+            loadingThreadCount,
+            new ThreadFactory() {
+              private final AtomicInteger counter = new AtomicInteger(0);
+
+              @Override
+              public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("CSVLoad-" + counter.incrementAndGet());
+                return thread;
+              }
+            });
+    for (Path csvDirectory : csvDirectories) {
+      writeService.submit(new CSVLoader(csvDirectory));
+    }
+  }
+
   private static void startGenerating() {
     // compute generating thread
     int generatingThreadCount = 0;
@@ -130,7 +175,7 @@ public class Main {
       generatingThreadCount += devices.size() / 2000 + ((devices.size() % 2000) > 0 ? 1 : 0);
     }
     logger.info("Using {} threads to generate workload", generatingThreadCount);
-    generationService =
+    writeService =
         Executors.newFixedThreadPool(
             generatingThreadCount,
             new ThreadFactory() {
@@ -149,7 +194,7 @@ public class Main {
       List<Device> devices = entry.getValue();
       for (int i = 0; i < devices.size(); i += 2000) {
         int end = Math.min(i + 2000, devices.size());
-        generationService.submit(new DataGenerator(interval, devices.subList(i, end)));
+        writeService.submit(new DataGenerator(interval, devices.subList(i, end)));
       }
       AtomicLong measurementsCount = new AtomicLong(0);
       devices.forEach(x -> measurementsCount.addAndGet(x.getMeasurementCount()));
@@ -164,7 +209,7 @@ public class Main {
     while (true) {
       if (Configuration.shouldEnd()) {
         consumerService.shutdownNow();
-        generationService.shutdownNow();
+        writeService.shutdownNow();
         System.exit(-1);
         break;
       } else {

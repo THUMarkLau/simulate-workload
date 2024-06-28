@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Configuration {
   public static String configFile = "config.txt";
+  public static String csvConfigFile = "csv_config.txt";
   public static String dbIp = "127.0.0.1";
   public static int requestSize = 100;
   public static double timeout = 10;
@@ -34,6 +35,8 @@ public class Configuration {
   public static boolean registerSchemaOnly = false;
   public static boolean clearBeforeStart = false;
   public static boolean enableMonitor = false;
+  public static boolean loadCSV = false;
+  public static long loadCSVIntervalInMs = 1000;
   public static String mode = "iotdb";
 
   public static void parseConfig(String[] args) {
@@ -64,6 +67,8 @@ public class Configuration {
         registerSchemaOnly = true;
       } else if (args[i].equals("--mode")) {
         mode = args[++i];
+      } else if (args[i].equals("--load-csv")) {
+        loadCSV = true;
       }
     }
   }

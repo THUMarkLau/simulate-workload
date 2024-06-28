@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -40,13 +41,25 @@ public class PropertiesLoader {
     this.configFile = file;
   }
 
+  public List<Path> loadCSV() throws IOException {
+    logger.info("Loading {}", configFile.getAbsolutePath());
+    List<Path> csvDirectories = new ArrayList<>();
+    String line;
+    try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
+      while ((line = reader.readLine()) != null) {
+        csvDirectories.add(new File(line).toPath());
+      }
+    }
+    return csvDirectories;
+  }
+
   public Map<Long, List<Device>> load() throws IOException {
     logger.info("Loading {}", configFile.getAbsolutePath());
     List<Device> devices = new ArrayList<>();
     int measurementTotalCount = 0;
     try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
       int deviceCount = Integer.parseInt(reader.readLine());
-      String line = null;
+      String line;
       for (int i = 0; i < deviceCount; ++i) {
         line = reader.readLine();
         if (line == null) {
