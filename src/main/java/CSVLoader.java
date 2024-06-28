@@ -18,7 +18,6 @@
  */
 
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
-import org.apache.iotdb.tsfile.utils.BitMap;
 import org.apache.iotdb.tsfile.write.record.Tablet;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 
@@ -48,33 +47,33 @@ public class CSVLoader implements Runnable {
 
   public List<MeasurementSchema> buildSchema() {
     List<MeasurementSchema> autoAISchema = new ArrayList<>();
-    autoAISchema.add(new MeasurementSchema("AccelerationFB(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("AccelerationLR(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("Speed_TypeA(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("SteeringAngle_TypeA(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("EngineRPM_TypeA(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("TirePressureFL_kpa(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("latitude(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("longitude(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("AccelPedalAngle_TypeA(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("TirePressureFR_kpa(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("TirePressureRL_kpa(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("TirePressureRR_kpa(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("AmbientTemperature(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("TemperatureD(DOUBLE)", TSDataType.DOUBLE));
-    autoAISchema.add(new MeasurementSchema("FuelGageIndication(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("TurnLampSwitchStatus(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("ATShiftPosition(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("BrakePedal(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("DoorOpenD(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("ParkingBrake(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("EcoModeIndicator(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("PowerModeSelect_TypeA(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("SportModeSelect(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("WindowPositionD(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("AirConIndicator(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("Odometer_km(INT32)", TSDataType.INT32));
-    autoAISchema.add(new MeasurementSchema("HeadLamp_TypeB(INT32)", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("AccelerationFB", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("AccelerationLR", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("Speed_TypeA", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("SteeringAngle_TypeA", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("EngineRPM_TypeA", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("TirePressureFL_kpa", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("latitude", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("longitude", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("AccelPedalAngle_TypeA", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("TirePressureFR_kpa", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("TirePressureRL_kpa", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("TirePressureRR_kpa", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("AmbientTemperature", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("TemperatureD", TSDataType.DOUBLE));
+    autoAISchema.add(new MeasurementSchema("FuelGageIndication", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("TurnLampSwitchStatus", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("ATShiftPosition", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("BrakePedal", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("DoorOpenD", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("ParkingBrake", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("EcoModeIndicator", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("PowerModeSelect_TypeA", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("SportModeSelect", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("WindowPositionD", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("AirConIndicator", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("Odometer_km", TSDataType.INT32));
+    autoAISchema.add(new MeasurementSchema("HeadLamp_TypeB", TSDataType.INT32));
     return autoAISchema;
   }
 
@@ -91,6 +90,9 @@ public class CSVLoader implements Runnable {
   }
 
   public void submitTablet(Tablet tablet) {
+    if (tablet == null) {
+      return;
+    }
     if (!queue.submit(tablet) && System.currentTimeMillis() - lastLogTime > 10_000) {
       logger.error("Failed to submit tablet to the queue for device {}", tablet.deviceId);
       lastLogTime = System.currentTimeMillis();
@@ -104,74 +106,94 @@ public class CSVLoader implements Runnable {
 
   @Override
   public void run() {
-    while (true) {
-      long currentTime = System.currentTimeMillis();
-      List<MeasurementSchema> autoAISchema = buildSchema();
-      try {
-        List<String> files =
-            Files.list(csvDirectory)
-                .filter(Files::isRegularFile)
-                .map(Path::toString)
-                .collect(Collectors.toList());
-        for (String file : files) {
-          try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            boolean skipFirstLine = true;
-            String lastDeviceId = null;
-            long[] timestamps = new long[autoAISchema.size()];
-            Object[] values = buildValues();
-            BitMap[] bitMaps = new BitMap[autoAISchema.size()];
-            int rowSize = 0;
-            boolean isAligned = true;
-
-            while ((line = reader.readLine()) != null) {
-              if (skipFirstLine) {
-                skipFirstLine = false;
-                continue;
-              }
-              String[] measurements = line.split(",");
-              if (measurements.length != autoAISchema.size() + 1) {
-                logger.error(
-                    "The number of values in the line is not equal to the number of columns in the schema");
-                continue;
-              }
-              String deviceId = measurements[0];
-              if (lastDeviceId == null) {
-                lastDeviceId = deviceId;
-              }
-              if (!lastDeviceId.equals(deviceId)) {
-                Tablet tablet =
-                    new Tablet(lastDeviceId, autoAISchema, timestamps, values, bitMaps, 1024);
-                submitTablet(tablet);
-                lastDeviceId = deviceId;
-                timestamps = new long[autoAISchema.size()];
-                values = buildValues();
-                bitMaps = new BitMap[autoAISchema.size()];
-                rowSize = 0;
-              }
-              for (int i = 0; i < autoAISchema.size(); i++) {
-                if (!measurements[i + 1].equals("null")) {
-                  bitMaps[i].mark(rowSize);
-                  if (autoAISchema.get(i).getType() == TSDataType.INT32) {
-                    ((List<Integer>) values[i]).add(Integer.parseInt(measurements[i + 1]));
-                  } else {
-                    ((List<Double>) values[i]).add(Double.parseDouble(measurements[i + 1]));
-                  }
+    List<MeasurementSchema> autoAISchema = buildSchema();
+    try {
+      List<String> files =
+          Files.list(csvDirectory)
+              .filter(Files::isRegularFile)
+              .map(Path::toString)
+              .collect(Collectors.toList());
+      for (String file : files) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+          String line;
+          boolean skipFirstLine = true;
+          String lastDeviceId = null;
+          List<Long> timestamps = new ArrayList<>();
+          Object[] values = buildValues();
+          int rowSize = 0;
+          int lineCount = 0;
+          while ((line = reader.readLine()) != null) {
+            if (skipFirstLine) {
+              skipFirstLine = false;
+              continue;
+            }
+            String[] measurements = line.split(",");
+            if (measurements.length != autoAISchema.size() + 2) {
+              logger.error(
+                  "The number of values in the line is not equal to the number of columns in the schema");
+              continue;
+            }
+            long timestamp = Long.parseLong(measurements[0].trim());
+            String deviceId = measurements[1];
+            if (lastDeviceId == null) {
+              lastDeviceId = deviceId;
+            }
+            if (!lastDeviceId.equals(deviceId)) {
+              Tablet tablet = buildTablet(lastDeviceId, autoAISchema, timestamps, values, rowSize);
+              submitTablet(tablet);
+              lastDeviceId = deviceId;
+              timestamps = new ArrayList<>();
+              values = buildValues();
+              rowSize = 0;
+            }
+            for (int i = 0; i < autoAISchema.size(); i++) {
+              if (!measurements[i + 2].equals("null")) {
+                if (autoAISchema.get(i).getType() == TSDataType.INT32) {
+                  ((List<Integer>) values[i]).add(Integer.parseInt(measurements[i + 2]));
+                } else {
+                  ((List<Double>) values[i]).add(Double.parseDouble(measurements[i + 2]));
                 }
               }
-              timestamps[rowSize] = currentTime;
-              rowSize++;
             }
-            Tablet tablet =
-                new Tablet(lastDeviceId, autoAISchema, timestamps, values, bitMaps, 1024);
-            submitTablet(tablet);
-          } catch (IOException e) {
-            logger.error("Error reading file {}", file, e);
+            timestamps.add(timestamp);
+            rowSize++;
+            lineCount++;
+            if (lineCount % 1000 == 0) {
+              logger.info("Processed {} lines in file {}", lineCount, file);
+            }
           }
+          Tablet tablet = buildTablet(lastDeviceId, autoAISchema, timestamps, values, rowSize);
+          submitTablet(tablet);
+        } catch (IOException e) {
+          logger.error("Error reading file {}", file, e);
         }
-      } catch (IOException e) {
-        logger.error("Error listing files in directory {}", csvDirectory, e);
+      }
+    } catch (IOException e) {
+      logger.error("Error listing files in directory {}", csvDirectory, e);
+    }
+  }
+
+  private Tablet buildTablet(
+      String lastDeviceId,
+      List<MeasurementSchema> autoAISchema,
+      List<Long> timestamps,
+      Object[] values,
+      int rowSize) {
+    if (rowSize == 0) {
+      return null;
+    }
+    long[] timestampsArray = timestamps.stream().mapToLong(Long::longValue).toArray();
+    Object[] valuesArray = new Object[autoAISchema.size()];
+    for (int i = 0; i < autoAISchema.size(); i++) {
+      if (autoAISchema.get(i).getType() == TSDataType.INT32) {
+        valuesArray[i] = ((List<Integer>) values[i]).stream().mapToInt(Integer::intValue).toArray();
+      } else {
+        valuesArray[i] =
+            ((List<Double>) values[i]).stream().mapToDouble(Double::doubleValue).toArray();
       }
     }
+    Tablet tablet =
+        new Tablet(lastDeviceId, autoAISchema, timestampsArray, valuesArray, null, rowSize);
+    return tablet;
   }
 }

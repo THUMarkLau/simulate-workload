@@ -36,7 +36,7 @@ public class Configuration {
   public static boolean clearBeforeStart = false;
   public static boolean enableMonitor = false;
   public static boolean loadCSV = false;
-  public static long loadCSVIntervalInMs = 1000;
+  public static long loadCSVIntervalInMs = 0;
   public static String mode = "iotdb";
 
   public static void parseConfig(String[] args) {

@@ -84,8 +84,9 @@ public class DataConsumer implements Runnable {
         for (Object record : records) {
           Tablet tablet = (Tablet) record;
           tablets.put(String.valueOf(++cnt), tablet);
+          pointsCounter.addAndGet((long) tablet.rowSize * tablet.getSchemas().size());
         }
-        GlobalSessionPool.getInstance().insertAlignedTablets(tablets);
+        GlobalSessionPool.getInstance().insertTablets(tablets);
       } else {
         List<String> deviceIds = new ArrayList<>(records.size());
         List<Long> timestamps = new ArrayList<>(records.size());

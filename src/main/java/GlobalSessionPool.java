@@ -64,9 +64,9 @@ public class GlobalSessionPool {
     sessionPool.insertRecords(deviceIds, timestamps, measurements, types, values);
   }
 
-  public void insertAlignedTablets(Map<String, Tablet> tablets)
+  public void insertTablets(Map<String, Tablet> tablets)
       throws IoTDBConnectionException, StatementExecutionException {
-    sessionPool.insertAlignedTablets(tablets);
+    sessionPool.insertTablets(tablets);
   }
 
   public void createMultiTimeseries(
