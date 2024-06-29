@@ -20,12 +20,15 @@
 import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+import org.apache.iotdb.tsfile.write.record.Tablet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,7 +37,7 @@ public class DataConsumer implements Runnable {
   public static final AtomicLong pointsCounter = new AtomicLong(0);
   public static final AtomicLong totalCount = new AtomicLong(0);
   private int requestSize = Configuration.requestSize;
-  private List<Record> records;
+  private List<Object> records;
 
   public DataConsumer() {
     records = new ArrayList<>(requestSize);
@@ -50,7 +53,7 @@ public class DataConsumer implements Runnable {
       long startTime = System.currentTimeMillis();
       for (int i = 0; i < requestSize; i++) {
         try {
-          Record data = queue.consume(timeout - (System.currentTimeMillis() - startTime));
+          Object data = queue.consume(timeout - (System.currentTimeMillis() - startTime));
           if (Objects.isNull(data)) {
             break;
           } else {
@@ -75,23 +78,34 @@ public class DataConsumer implements Runnable {
       return;
     }
     if (Configuration.mode.equalsIgnoreCase("iotdb")) {
-      List<String> deviceIds = new ArrayList<>(records.size());
-      List<Long> timestamps = new ArrayList<>(records.size());
-      List<List<String>> measurementIds = new ArrayList<>(records.size());
-      List<List<TSDataType>> types = new ArrayList<>(records.size());
-      List<List<Object>> values = new ArrayList<>(records.size());
+      if (Configuration.loadCSV) {
+        Map<String, Tablet> tablets = new HashMap<>();
+        int cnt = 0;
+        for (Object record : records) {
+          Tablet tablet = (Tablet) record;
+          tablets.put(String.valueOf(++cnt), tablet);
+          pointsCounter.addAndGet((long) tablet.rowSize * tablet.getSchemas().size());
+        }
+        GlobalSessionPool.getInstance().insertTablets(tablets);
+      } else {
+        List<String> deviceIds = new ArrayList<>(records.size());
+        List<Long> timestamps = new ArrayList<>(records.size());
+        List<List<String>> measurementIds = new ArrayList<>(records.size());
+        List<List<TSDataType>> types = new ArrayList<>(records.size());
+        List<List<Object>> values = new ArrayList<>(records.size());
 
-      for (Record record : records) {
-        deviceIds.add(record.deviceId);
-        timestamps.add(record.timestamp);
-        measurementIds.add(record.measurements);
-        pointsCounter.addAndGet(record.measurements.size());
-        types.add(record.types);
-        values.add(record.values);
+        for (Object record : records) {
+          deviceIds.add(((Record) record).deviceId);
+          timestamps.add(((Record) record).timestamp);
+          measurementIds.add(((Record) record).measurements);
+          pointsCounter.addAndGet(((Record) record).measurements.size());
+          types.add(((Record) record).types);
+          values.add(((Record) record).values);
+        }
+
+        GlobalSessionPool.getInstance()
+            .insertRecords(deviceIds, timestamps, measurementIds, types, values);
       }
-
-      GlobalSessionPool.getInstance()
-          .insertRecords(deviceIds, timestamps, measurementIds, types, values);
     } else {
       TDEngineSessionPool.sendRequest(records);
     }
