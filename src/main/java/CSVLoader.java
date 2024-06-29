@@ -38,6 +38,7 @@ public class CSVLoader implements Runnable {
   private final Path csvDirectory;
   private final List<MeasurementSchema> autoAISchema;
   private long lastLogTime = 0L;
+  private long lastSubmitTime = 0L;
   private final DataQueue queue = DataQueue.getInstance();
 
   public CSVLoader(Path csvDirectory) {
@@ -93,15 +94,20 @@ public class CSVLoader implements Runnable {
     if (tablet == null) {
       return;
     }
+    long lastTimeStamp = tablet.timestamps[tablet.rowSize - 1];
+    long interval = lastSubmitTime == 0 ? 0 : Long.max(0, lastTimeStamp - lastSubmitTime);
+    try {
+      logger.info(
+          "Sleeping for {} ms after submit tablet, lastTimeStamp: {}", interval, lastTimeStamp);
+      Thread.sleep(interval);
+    } catch (InterruptedException e) {
+      logger.error("Error sleeping after submit tablet:", e);
+    }
     if (!queue.submit(tablet) && System.currentTimeMillis() - lastLogTime > 10_000) {
       logger.error("Failed to submit tablet to the queue for device {}", tablet.deviceId);
       lastLogTime = System.currentTimeMillis();
     }
-    try {
-      Thread.sleep(Configuration.loadCSVIntervalInMs);
-    } catch (InterruptedException e) {
-      logger.error("Error sleeping after submit tablet:", e);
-    }
+    lastSubmitTime = Long.max(lastSubmitTime, lastTimeStamp);
   }
 
   @Override
@@ -171,6 +177,7 @@ public class CSVLoader implements Runnable {
     } catch (IOException e) {
       logger.error("Error listing files in directory {}", csvDirectory, e);
     }
+    logger.info("Finished loading CSV files from directory {}", csvDirectory);
   }
 
   private Tablet buildTablet(
