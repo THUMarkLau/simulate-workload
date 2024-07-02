@@ -97,7 +97,7 @@ public class CSVLoader implements Runnable {
     long lastTimeStamp = tablet.timestamps[tablet.rowSize - 1];
     long interval = lastSubmitTime == 0 ? 0 : Long.max(0, lastTimeStamp - lastSubmitTime);
     try {
-      logger.info(
+      logger.debug(
           "Sleeping for {} ms after submit tablet, lastTimeStamp: {}", interval, lastTimeStamp);
       Thread.sleep(interval);
     } catch (InterruptedException e) {
