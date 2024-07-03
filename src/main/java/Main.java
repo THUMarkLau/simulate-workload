@@ -67,7 +67,7 @@ public class Main {
   }
 
   private static void loadCSVConfig() throws IOException {
-    PropertiesLoader propertiesLoader = new PropertiesLoader(new File(Configuration.csvConfigFile));
+    PropertiesLoader propertiesLoader = new PropertiesLoader(new File(Configuration.configFile));
     csvDirectories = propertiesLoader.loadCSV();
     Configuration.queueSize = Math.max(csvDirectories.size() * 16, Configuration.queueSize);
   }
