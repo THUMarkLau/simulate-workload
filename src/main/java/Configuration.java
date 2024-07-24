@@ -34,6 +34,7 @@ public class Configuration {
   public static boolean registerSchemaOnly = false;
   public static boolean clearBeforeStart = false;
   public static boolean enableMonitor = false;
+  public static boolean loadCSV = false;
   public static String mode = "iotdb";
 
   public static void parseConfig(String[] args) {
@@ -64,6 +65,8 @@ public class Configuration {
         registerSchemaOnly = true;
       } else if (args[i].equals("--mode")) {
         mode = args[++i];
+      } else if (args[i].equals("--load-csv")) {
+        loadCSV = true;
       }
     }
   }
